@@ -29,7 +29,17 @@ def extract_answer_from_edge(edge):
     return {'question': question['sections'][0]['spans'][0]['text'], 'answer': answer}
 
 
-def get_answers_from_uid(uid, page='0', collected_answers=None):
+def get_total_answers_and_posts(uid, page='10000000'):
+    graphql_json['variables']['uid'] = uid
+    graphql_json['variables']['after'] = page
+    answer_request = requests.post(url=graphql_url, json=graphql_json, headers=headers)
+    answer_response = answer_request.json()
+
+    end_cursor = answer_response['data']['user']['combinedProfileFeedConnection']['pageInfo']['endCursor']
+    return int(end_cursor) if end_cursor is not page else get_total_answers_and_posts(uid, '1000000000')
+
+
+def get_answers_from_uid(uid, page='0', collected_answers=None, total_answers=0, answers_downloaded=0):
     answers = collected_answers if collected_answers is not None else []
     graphql_json['variables']['uid'] = uid
     graphql_json['variables']['after'] = page
@@ -44,7 +54,10 @@ def get_answers_from_uid(uid, page='0', collected_answers=None):
         if edge['node'].__contains__('answer'):
             answers.append(extract_answer_from_edge(edge))
 
-    return get_answers_from_uid(uid, page_info['endCursor'], answers) if page_info['hasNextPage'] else answers
+        answers_downloaded += 1
+        sys.stdout.write('\rProcessing {} of {} total items..'.format(answers_downloaded, total_answers))
+
+    return get_answers_from_uid(uid, page_info['endCursor'], answers, total_answers, answers_downloaded) if page_info['hasNextPage'] else answers
 
 
 def get_uid_from_profile_url(profile_url):
@@ -65,12 +78,14 @@ def write_answers_to_file(answers):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    profile_pattern = re.compile("https://www\\.quora\\.com/profile/[\\w\\-]+.*")
+    if len(sys.argv) > 1 and profile_pattern.match(sys.argv[1]):
         user_id = get_uid_from_profile_url(sys.argv[1])
-        all_answers = get_answers_from_uid(user_id)
+        answers_total = get_total_answers_and_posts(user_id)
+        all_answers = get_answers_from_uid(user_id, total_answers=answers_total)
         write_answers_to_file(all_answers)
     else:
-        print('No profile URL was supplied')
+        print('Usage: ./qscrape https://www.quora.com/profile/<profile-name>')
 
 
 

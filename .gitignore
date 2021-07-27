@@ -7,3 +7,11 @@ dist/
 # Runtime
 # =======
 *Answers.txt
+
+# Python
+# =======
+venv/
+
+# JetBrains
+# =======
+.idea/
