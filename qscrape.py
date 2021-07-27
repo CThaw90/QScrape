@@ -39,9 +39,10 @@ def get_answers_from_uid(uid, page='0', collected_answers=None):
     combined_profile_feed = answer_response['data']['user']['combinedProfileFeedConnection']
     page_info = combined_profile_feed['pageInfo']
     edges = combined_profile_feed['edges']
-
+    
     for edge in edges:
-        answers.append(extract_answer_from_edge(edge))
+        if edge['node'].__contains__('answer'):
+            answers.append(extract_answer_from_edge(edge))
 
     return get_answers_from_uid(uid, page_info['endCursor'], answers) if page_info['hasNextPage'] else answers
 
@@ -54,7 +55,7 @@ def get_uid_from_profile_url(profile_url):
 
 
 def write_answers_to_file(answers):
-    pattern = re.compile("https://www.quora.com/profile/(.*)")
+    pattern = re.compile("https://www.quora.com/profile/([\\w\\-]+).*")
     file = open(pattern.search(sys.argv[1]).group(1) + '-Answers.txt', 'w+', encoding='utf-8')
     for answer in answers:
         file.write(answer['question'].upper() + '\n')

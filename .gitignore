@@ -1,6 +1,9 @@
 # Build
 # =======
-.qspec
-.spec
+*.spec
 build/
 dist/
+
+# Runtime
+# =======
+*Answers.txt
