@@ -1,3 +1,4 @@
+import platform
 import re
 import requests
 import json
@@ -77,6 +78,10 @@ def write_answers_to_file(answers):
     file.close()
 
 
+def is_windows():
+    return platform.system() == 'Windows'
+
+
 if __name__ == '__main__':
     profile_pattern = re.compile("https://www\\.quora\\.com/profile/[\\w\\-]+.*")
     if len(sys.argv) > 1 and profile_pattern.match(sys.argv[1]):
@@ -85,7 +90,7 @@ if __name__ == '__main__':
         all_answers = get_answers_from_uid(user_id, total_answers=answers_total)
         write_answers_to_file(all_answers)
     else:
-        print('Usage: ./qscrape https://www.quora.com/profile/<profile-name>')
+        print('Usage: {} https://www.quora.com/profile/<profile-name>'.format('qscrape' if is_windows() else './qscrape'))
 
 
 
